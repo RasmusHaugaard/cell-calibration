@@ -50,10 +50,20 @@ def detect_charuco_corners(gray_images, board, criteria=_criteria, log_progress=
             marker_corners, marker_ids, gray_img, board
         )
 
-        if charuco_corners is not None and len(charuco_corners) > 3:
-            img_ids.append(i)
-            all_charuco_corners.append(charuco_corners)
-            all_charuco_ids.append(charuco_ids)
+        if charuco_corners is None or len(charuco_corners) < 3:
+            print('Not enough markers detected. Skipping frame..', i)
+            continue
+
+        w = board.getChessboardSize()[0] - 1  # one less corner than squares
+        rows = set([i[0] // w for i in charuco_ids])
+        cols = set([i[0] % w for i in charuco_ids])
+        if len(rows) == 1 or len(cols) == 1:
+            print('Only one row / column represented. Skipping frame..', i)
+            continue
+
+        img_ids.append(i)
+        all_charuco_corners.append(charuco_corners)
+        all_charuco_ids.append(charuco_ids)
 
     return CharucoDetectionResult(np.array(img_ids), np.array(all_charuco_corners), np.array(all_charuco_ids))
 
@@ -76,8 +86,8 @@ def calc_whisker(per_view_errors):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--folder', required=True)
+    parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
-    cam = args.cam
 
     folder = Path(args.folder)
     image_folder = folder / 'calibration-images'
@@ -87,6 +97,14 @@ def main():
     h, w = imgs_gray[0].shape[:2]
     board = create_charuco_board(14, 9, 0.02, 0.015)
     d = detect_charuco_corners(imgs_gray, board)
+
+    if args.debug:
+        for img_id, corners, ids in zip(d.img_ids, d.all_charuco_corners, d.all_charuco_ids):
+            img = imgs_gray[img_id]
+            cv2.aruco.drawDetectedCornersCharuco(img, corners, ids, (0, 0, 255))
+            cv2.imshow("", img)
+            cv2.waitKey()
+        quit()
 
     print('starting calibration...')
     calib = calibrate(None, d.all_charuco_corners, d.all_charuco_ids, board, h, w)

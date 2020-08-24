@@ -93,25 +93,21 @@ def main():
     parser.add_argument('--backwards', action='store_true')
     args = parser.parse_args()
 
-    cam = args.cam
     robot = Robot.from_ip(args.ur_ip)
 
     if args.replay:
-        demonstration = np.load('data/demonstration_{}.npy'.format(cam))
+        demonstration = np.load(args.file)
         if args.backwards:
             demonstration = demonstration[::-1]
         print(len(demonstration), 'samples in original')
         prune_idxs = prune(demonstration)
         pruned = demonstration[prune_idxs]
         print(len(pruned), 'samples after pruning')
-        # fps_idxs = prune_idxs[farthest_point_sampling(pruned, n=50)]
-        # fps = demonstration[fps_idxs]
-        # print(len(fps), 'samples after fps')
         input('replay?')
         replay(pruned, robot)
     else:
         demonstration = capture(robot)
-        np.save('data/demonstration_{}.npy'.format(cam), demonstration)
+        np.save(args.file, demonstration)
 
 
 if __name__ == '__main__':

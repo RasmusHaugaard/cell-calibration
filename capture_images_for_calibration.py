@@ -22,12 +22,12 @@ def main():
     parser.add_argument('--demonstration', required=True)
     parser.add_argument('--backwards', action='store_true')
 
-    rospy.init_node('image-capture-node', anonymous=True)
+    rospy.init_node('image_capture_node', anonymous=True)
 
     args = parser.parse_args()
 
     folder = Path(args.folder)
-    folder.mkdir()
+    folder.mkdir(exist_ok=True)
 
     image_folder = folder / 'calibration-images'
     image_folder.mkdir()
