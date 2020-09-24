@@ -52,7 +52,7 @@ def center(robot: Robot, axis, ft=None, t=2.):
 
     transforms = []  # type: List[Transform]
     for m in 1, -1:
-        robot.ctrl.forceModeStart(base_t_tcp, selection, wrench * m, 2, limits)
+        robot.ctrl.forceMode(base_t_tcp, selection, wrench * m, 2, limits)
         settle(robot, t=t / 2)
         transforms.append(robot.base_t_tcp())
     robot.ctrl.forceModeStop()
@@ -65,7 +65,7 @@ def center(robot: Robot, axis, ft=None, t=2.):
 
 def get_stable_table_pose(robot: Robot, force_down=25, force_side=15, torque=2):
     # align with table (z, rx, ry)
-    robot.ctrl.forceModeStart(
+    robot.ctrl.forceMode(
         robot.base_t_tcp(), (1, 1, 1, 1, 1, 1),
         (0, 0, force_down, 0, 0, 0), 2, np.ones(6)
     )

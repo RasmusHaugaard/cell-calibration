@@ -18,9 +18,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ur-ip', required=True)
     parser.add_argument('--image-topic', required=True)
+    parser.add_argument('--exposure', type=float, default=1 / 30)
     parser.add_argument('--folder', required=True)
     parser.add_argument('--demonstration', required=True)
     parser.add_argument('--backwards', action='store_true')
+    parser.add_argument('--bayered', action='store_true')
 
     rospy.init_node('image_capture_node', anonymous=True)
 
@@ -57,9 +59,11 @@ def main():
         now = time.time()
         while True:
             img = rospy.wait_for_message(args.image_topic, Image)  # type: Image
-            if img.header.stamp.to_sec() > now:
+            if img.header.stamp.to_sec() - args.exposure > now:
                 break
         img = image_to_numpy(img)
+        if args.bayered:
+            img = cv2.cvtColor(img, cv2.COLOR_BAYER_BG2BGR)
         img_path = image_folder / '{}.png'.format(i)
         cv2.imwrite(str(img_path), img[..., ::-1])
 

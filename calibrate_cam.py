@@ -12,7 +12,7 @@ _criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.00001)
 
 CameraIntrinsics = namedtuple('CalibrationResult', (
     'img_ids', 'reprojection_error', 'camera_matrix', 'dist_coeffs', 'rvecs', 'tvecs',
-    'std_deviations_intrinsics', 'std_deviations_extrinsics', 'per_view_errors'
+    'std_deviations_intrinsics', 'std_deviations_extrinsics', 'per_view_errors', 'h', 'w'
 ))
 
 CharucoDetectionResult = namedtuple('CharucoDetectionResult', ('img_ids', 'all_charuco_corners', 'all_charuco_ids'))
@@ -21,7 +21,7 @@ CharucoDetectionResult = namedtuple('CharucoDetectionResult', ('img_ids', 'all_c
 def calibrate(img_ids, charuco_corners, charuco_ids, board, h, w):
     return CameraIntrinsics(img_ids, *cv2.aruco.calibrateCameraCharucoExtended(
         list(charuco_corners), list(charuco_ids), board, (w, h), None, None
-    ))
+    ), h, w)
 
 
 def create_charuco_board(squares_x: int, squares_y: int, square_length: float,
@@ -43,6 +43,10 @@ def detect_charuco_corners(gray_images, board, criteria=_criteria, log_progress=
 
     for i, gray_img in enumerate(iterator):
         marker_corners, marker_ids, rejected_img_points = cv2.aruco.detectMarkers(gray_img, board.dictionary)
+        if marker_corners is None or len(marker_corners) < 4:
+            print('Not enough markers detected. Skipping frame..', i)
+            continue
+
         for corner in marker_corners:
             cv2.cornerSubPix(gray_img, corner, winSize=(3, 3), zeroZone=(-1, -1), criteria=criteria)
 
@@ -50,7 +54,7 @@ def detect_charuco_corners(gray_images, board, criteria=_criteria, log_progress=
             marker_corners, marker_ids, gray_img, board
         )
 
-        if charuco_corners is None or len(charuco_corners) < 3:
+        if charuco_corners is None or len(charuco_corners) < 4:
             print('Not enough markers detected. Skipping frame..', i)
             continue
 
